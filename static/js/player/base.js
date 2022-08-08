@@ -29,6 +29,11 @@ class Player extends AcGameObject {
         this.animations = new Map();
 
         this.frame_current_cnt = 0;
+
+        this.hp = 100;
+        //find，在后代中查找
+        this.$hp = this.root.$kof.find(`.kof-head-hp-${this.id}>div`);  //外层--红色
+        this.$hp_div = this.$hp.find('div');   //里层--绿色
     }   
 
     start() {
@@ -49,7 +54,7 @@ class Player extends AcGameObject {
             space = this.pressed_keys.has('Enter');
         }
 
-        if (this.status === 0 || this.status === 1 || this.status === 2) {
+        if (this.status === 0 || this.status === 1) {
             if (space) {
                 this.status = 4;
                 this.vx = 0;
@@ -71,7 +76,7 @@ class Player extends AcGameObject {
                 this.status = 1;
             } else if (a) {
                 this.vx = -this.speedx;
-                this.status = 2;
+                this.status = 1;
             } else {
                 this.vx = 0;
                 this.status = 0;
@@ -80,9 +85,7 @@ class Player extends AcGameObject {
     }
 
     update_move() {
-        if (this.status === 3) {
-            this.vy += this.gravity;   
-        }
+        this.vy += this.gravity;   
 
         this.x += this.vx * this.timedelta / 1000;
         this.y += this.vy * this.timedelta / 1000;
@@ -90,7 +93,7 @@ class Player extends AcGameObject {
         if (this.y > 450) {
             this.y = 450;
             this.vy = 0;
-            this.status = 0;
+            if(this.status === 3) this.status = 0;
         }
 
         if (this.x < 0) {
@@ -101,6 +104,8 @@ class Player extends AcGameObject {
     }
 
     update_direction() {
+        if (this.status === 6) return;
+
         let players = this.root.players;
         if (players[0] && players[1]) {
             let me = this, you = players[1 - this.id];
@@ -109,19 +114,97 @@ class Player extends AcGameObject {
         }
     }
 
+    is_attack() {
+        if (this.status === 6) return;
+        this.status = 5;
+        this.frame_current_cnt = 0;
+
+        this.hp = Math.max(this.hp - 20, 0);
+
+        this.$hp_div.animate({   //里面的div(绿色)血条减少的渐变效果
+            width: this.$hp.parent().width() * this.hp / 100,
+        }, 300);
+        this.$hp.animate({   //外面的div(红色)的渐变效果
+            width: this.$hp.parent().width() * this.hp / 100
+        }, 600);
+
+        if (this.hp <= 0) {
+            this.status = 6;
+            this.hp = 0;
+            this.vx = 0;
+        }
+    }
+
+    is_collision(r1, r2) {
+        if (Math.max(r1.x1, r2.x1) > Math.min(r1.x2, r2.x2)) {
+            return false;
+        }
+        if (Math.max(r1.y1, r2.y1) > Math.min(r1.y2, r2.y2)) {
+            return false;
+        }
+        return true;
+    }
+
+    update_attack() {
+        //根据测试得到，在攻击动作的第18帧去进行判断检测
+        if (this.status === 4 && this.frame_current_cnt === 18) {
+            let me = this, you = this.root.players[1 - this.id];
+            let r1;
+            if (this.direction > 0) {
+                r1 = {   //(x1, y1)为矩形左上角坐标，(x2, y2)为右下角坐标，把挥拳的矩形提取出来用于判断
+                    x1: me.x + 120,
+                    y1: me.y + 40,
+                    x2: me.x + 120 + 100,
+                    y2: me.y + 40 + 20,
+                };
+            } else {
+                r1 = {
+                    x1: me.x + me.width - 120 - 100,
+                    y1: me.y + 40,
+                    x2: me.x + me.width - 120 - 100 + 100,
+                    y2: me.y + 40 + 20,
+                };
+            }
+            
+            let r2 = {
+                x1: you.x,
+                y1: you.y,
+                x2: you.x + you.width,
+                y2: you.y + you.height,
+            }
+
+            if (this.is_collision(r1, r2)) {
+                you.is_attack();
+            }
+
+        }
+
+    }
+
     update() {
         this.update_control();
         this.update_move();
         this.update_direction();
+        this.update_attack();
 
         this.render();
     }
 
     render() {   //渲染
-        // this.ctx.fillStyle = this.color;
+        //碰撞检测矩形
+        // this.ctx.fillStyle = 'blue';
         // this.ctx.fillRect(this.x, this.y, this.width, this.height);
 
+        // if (this.direction > 0) {
+        //     this.ctx.fillStyle = 'red';
+        //     this.ctx.fillRect(this.x + 120, this.y + 40, 100, 20);
+        // } else {
+        //     this.ctx.fillStyle = 'red';
+        //     this.ctx.fillRect(this.x + this.width - 120 - 100, this.y + 40, 100, 20);
+        // }
+
         let status = this.status;
+        if (this.status === 1 && this.direction * this.vx < 0) status = 2;
 
         let obj = this.animations.get(status);
         if (obj && obj.loaded) {   //已经被加载出来了
@@ -142,8 +225,13 @@ class Player extends AcGameObject {
             }
         }
         
-        if (status === 4 && this.frame_current_cnt === obj.frame_rate * (obj.frame_cnt - 1)) {
-            this.status = 0;
+        if (this.status === 4 || this.status === 5 || this.status === 6){
+            if (this.frame_current_cnt === obj.frame_rate * (obj.frame_cnt - 1)) {
+                if (this.status === 6) {
+                    this.frame_current_cnt--;
+                }
+                else this.status = 0;
+            }
         }
         this.frame_current_cnt++;
     }
