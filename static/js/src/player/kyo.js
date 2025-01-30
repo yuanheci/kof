@@ -1,5 +1,5 @@
-import { Player } from '/static/js/player/base.js'
-import { GIF } from '/static/js/utils/gif.js'
+import { Player } from '/static/js/src/player/base.js'
+import { GIF } from '/static/js/src/utils/gif.js'
 
 class Kyo extends Player{
     constructor(root, info) {
@@ -34,3 +34,5 @@ class Kyo extends Player{
 export {
     Kyo
 }
+
+

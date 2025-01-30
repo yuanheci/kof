@@ -1,5 +1,5 @@
-import { GameMap } from '/static/js/game_map/base.js'
-import { Kyo } from '/static/js/Player/kyo.js'
+import { GameMap } from '/static/js/src/game_map/base.js'
+import { Kyo } from '/static/js/src/player/kyo.js'
 
 //主类，这个类才是直接被引入到html中的，所以子类要在这里引入并创建实例
 class KOF {
@@ -33,3 +33,5 @@ class KOF {
 export {
     KOF
 }
+
+

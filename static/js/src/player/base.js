@@ -1,4 +1,4 @@
-import {AcGameObject} from "/static/js/ac_game_object/base.js"
+import {AcGameObject} from "/static/js/src/ac_game_object/base.js"
 
 class Player extends AcGameObject {
     constructor(root, info) { //root，便于索引地图上的每一个元素
@@ -240,3 +240,5 @@ class Player extends AcGameObject {
 export {
     Player
 }
+
+

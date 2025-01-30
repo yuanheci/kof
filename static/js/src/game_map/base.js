@@ -1,5 +1,5 @@
-import { AcGameObject } from '/static/js/ac_game_object/base.js'
-import {Controller} from '/static/js/controller/base.js'
+import { AcGameObject } from '/static/js/src/ac_game_object/base.js'
+import {Controller} from '/static/js/src/controller/base.js'
 
 class GameMap extends AcGameObject{
     constructor(root) {
@@ -59,3 +59,5 @@ class GameMap extends AcGameObject{
 export {
     GameMap
 }
+
+
